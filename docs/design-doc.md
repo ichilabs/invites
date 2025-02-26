@@ -126,7 +126,76 @@ The invites.cc interface reimagines event coordination as a conversation:
 |-------------------------------------------------------|
 ```
 
-### gRPC API Features
+### Use Cases
+
+```mermaid
+flowchart TD
+    %% Define main nodes first
+    User(["User"])
+    SignedInUser(["Signed-In User"])
+    LinkAdmin(["Link Admin"])
+    LinkMember(["Link Member"])
+    EventHost(["Event Host"])
+    
+    subgraph Authentication
+        User -->|"**1.** Sign-In with Google"| SignedInUser
+    end
+    
+    subgraph Link
+        subgraph Member
+            SignedInUser -->|"**2.** Create Link"| LinkAdmin
+            SignedInUser -->|"**5.** Join with valid Token"| LinkMember
+            LinkAdmin -->|"**12.** Remove"| LinkMember
+        end
+        
+        LinkAdmin -->|"**3.** Generate/Revoke"| LinkMemberToken["Link Member Token"]
+        LinkMemberToken -->|"**4.** Share to invite new members"| User
+    end
+    
+    subgraph Event
+        %% Roles and creation
+        LinkAdmin -->|"**5.a** Create Event"| EventHost
+        LinkMember -->|"**5.b** Create Event"| EventHost
+        
+        %% Invitations
+        EventHost -->|"**5.a** Invite"| LinkAdmin
+        EventHost -->|"**5.b** Invite"| LinkMember
+        
+        %% Guest management
+        EventHost -->|"**7.** Generate/Revoke"| EventGuestToken["Event Guest Token"]
+        EventGuestToken -->|"**8.** Share to invite non-Link members"| User
+        User -->|"**9.** Join as Guest with valid Token"| Guests["Event Guests"]
+        
+        %% RSVPs
+        subgraph RSVP
+            LinkAdmin -->|"**6.a** RSVP"| EventRSVP["Event RSVPs<br>Response: (going, notGoing, maybe)<br>+ Number of additional guests"]
+            LinkMember -->|"**6.b** RSVP"| EventRSVP
+            Guests -->|"**10.** RSVP"| EventRSVP
+            EventHost -->|"**11.** Manage visibility"| EventRSVP
+        end
+    end
+    
+    %% Styling
+    classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px,border-radius:8px
+    classDef member fill:#d4f1f9,stroke:#05a,stroke-width:2px,border-radius:8px
+    classDef links fill:#e5f9d6,stroke:#092,stroke-width:1px,border-radius:5px
+    classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px,border-radius:5px
+    classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px,border-radius:5px
+    
+    %% Apply styles
+    class User,SignedInUser,EventHost user
+    class LinkAdmin,LinkMember member
+    class LinkMemberToken links
+    class EventGuestToken,Guests events
+    class EventRSVP rsvp
+    
+    %% Improve subgraph styling
+    style Authentication fill:#f0f8ff,stroke:#ccc,stroke-width:1px
+    style Link fill:#f5fff0,stroke:#ccc,stroke-width:1px
+    style Member fill:#f5fff5,stroke:#ddd,stroke-width:1px,stroke-dasharray: 5 5
+    style Event fill:#fff8f0,stroke:#ccc,stroke-width:1px
+    style RSVP fill:#fffff0,stroke:#ddd,stroke-width:1px,stroke-dasharray: 5 5
+```
 
 #### User
 
@@ -152,56 +221,3 @@ The invites.cc interface reimagines event coordination as a conversation:
 11. **Link Member RSVP**: Signed-in Link Members can RSVP to events within their Link, indicating their attendance status (Going, Not Going, Maybe) and the number of additional guests they are bringing.
 12. **Guest Token Holder RSVP**: Users with a valid guest invitation token can RSVP to the associated event, even if they are not Link Members. Users RSVPing via a token can provide their name (if not signed in) and RSVP status (Going, Not Going, Maybe) along with guest count.
 13. **RSVP Visibility**: Event Hosts and Link Admins can always view full RSVP details. They also have the option to make the list of "Going" attendees visible to all Link Members, offering a privacy control setting.
-
----
-
-```mermaid
-flowchart TD
-    %% Main user states
-    User(["User"]) --> SignedInUser(["Signed-in User"])
-    SignedInUser --> LinkMember(["Link Member"])
-    LinkMember --> EventHost(["Event Host"])
-    
-    %% Main actions and connections
-    subgraph Authentication
-        User -->|1. Google Sign-In| SignedInUser
-    end
-    
-    subgraph Links
-        SignedInUser -->|2. Create/Join Link| LinkMember
-        LinkMember -->|3. Invite Others| InviteMembers["Invite Members"]
-        InviteMembers -->|4. Accept Invite| NewLinkMember["New Link Member"]
-    end
-    
-    subgraph Events
-        LinkMember -->|5. Create Event| EventHost
-        EventHost -->|6. Generate Guest List| GT["Guest Tokens"]
-        GT -->|7. Send Invitations| Guests["Event Guests"]
-    end
-    
-    subgraph RSVPs
-        LinkMember -->|8. RSVP to Event| EventRSVP["Event RSVPs"]
-        Guests -->|9. Guest RSVP| EventRSVP
-        EventHost -->|10. Manage RSVPs| EventRSVP
-    end
-    
-    %% Additional Roles and Permissions
-    subgraph Roles
-        LinkMember -->|Potential Role| LinkAdmin(["Link Admin"])
-        LinkAdmin -->|Manage Link| ManageLink["Manage Link Settings"]
-        LinkAdmin -->|Remove Members| RemoveMembers["Remove Members"]
-    end
-    
-    %% Styling
-    classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px
-    classDef links fill:#e5f9d6,stroke:#092,stroke-width:1px
-    classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px
-    classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px
-    classDef roles fill:#f9d6e4,stroke:#609,stroke-width:1px
-    
-    class User,SignedInUser,LinkMember,EventHost user
-    class InviteMembers,NewLinkMember links
-    class GT,Guests events
-    class EventRSVP rsvp
-    class LinkAdmin,ManageLink,RemoveMembers roles
-```
