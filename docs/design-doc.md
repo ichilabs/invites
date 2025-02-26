@@ -158,43 +158,50 @@ The invites.cc interface reimagines event coordination as a conversation:
 ```mermaid
 flowchart TD
     %% Main user states
-    User["User"] --> SignedInUser["Signed-in User"]
-    SignedInUser --> LinkAdmin["Link Admin"]
-    SignedInUser --> LinkMember["Link Member"]
-    LinkMember --> EventHost["Event Host"]
-    
+    User(["User"]) --> SignedInUser(["Signed-in User"])
+    SignedInUser --> LinkMember(["Link Member"])
+    LinkMember --> EventHost(["Event Host"])
+
     %% Main actions and connections
     subgraph Authentication
         User -->|1. Google Sign-In| SignedInUser
     end
-    
+
     subgraph Links
-        SignedInUser -->|2. Create Link| LinkAdmin
-        LinkAdmin -->|3-4. Manage Member Tokens| MT["Member Tokens"]
-        LinkAdmin -->|5. Remove Members| LinkMember
-        MT -->|6. Join Link| LinkMember
+        SignedInUser -->|2. Create/Join Link| LinkMember
+        LinkMember -->|3. Invite Others| InviteMembers["Invite Members"]
+        InviteMembers -->|4. Accept Invite| NewLinkMember["New Link Member"]
     end
-    
+
     subgraph Events
-        LinkMember -->|7. Create Event| EventHost
-        EventHost -->|8-9. Manage Guest Tokens| GT["Guest Tokens"]
-        LinkMember -->|10. View Events| Events["Link Events"]
+        LinkMember -->|5. Create Event| EventHost
+        EventHost -->|6. Generate Guest List| GT["Guest Tokens"]
+        GT -->|7. Send Invitations| Guests["Event Guests"]
     end
-    
+
     subgraph RSVPs
-        LinkMember -->|11. Member RSVP| RSVPs["Event RSVPs"]
-        GT -->|12. Guest RSVP| RSVPs
-        EventHost -->|13. Control RSVP Visibility| RSVPs
+        LinkMember -->|8. RSVP to Event| EventRSVP["Event RSVPs"]
+        Guests -->|9. Guest RSVP| EventRSVP
+        EventHost -->|10. Manage RSVPs| EventRSVP
     end
-    
+
+    %% Additional Roles and Permissions
+    subgraph Roles
+        LinkMember -->|Potential Role| LinkAdmin(["Link Admin"])
+        LinkAdmin -->|Manage Link| ManageLink["Manage Link Settings"]
+        LinkAdmin -->|Remove Members| RemoveMembers["Remove Members"]
+    end
+
     %% Styling
     classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px
     classDef links fill:#e5f9d6,stroke:#092,stroke-width:1px
     classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px
     classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px
-    
-    class User,SignedInUser,LinkAdmin,LinkMember,EventHost user
-    class MT,LinkAdmin links
-    class GT,Events events
-    class RSVPs rsvp
+    classDef roles fill:#f9d6e4,stroke:#609,stroke-width:1px
+
+    class User,SignedInUser,LinkMember,EventHost user
+    class InviteMembers,NewLinkMember links
+    class GT,Guests,Events events
+    class EventRSVP rsvp
+    class LinkAdmin,ManageLink,RemoveMembers roles
 ```
