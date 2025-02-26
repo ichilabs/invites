@@ -156,45 +156,45 @@ The invites.cc interface reimagines event coordination as a conversation:
 ---
 
 ```mermaid
-flowchart TD 
-    %% Main user states 
-    User(["User"]) --> SignedInUser(["Signed-in User"]); 
-    SignedInUser --> LinkAdmin(["Link Admin"]); 
-    SignedInUser --> LinkMember(["Link Member"]); 
-    LinkMember --> EventHost(["Event Host"]); 
+flowchart TD
+    %% Main user states
+    User["User"] --> SignedInUser["Signed-in User"]
+    SignedInUser --> LinkAdmin["Link Admin"]
+    SignedInUser --> LinkMember["Link Member"]
+    LinkMember --> EventHost["Event Host"]
     
-    %% Main actions and connections 
-    subgraph Authentication 
-        User -->|1. Google Sign-In| SignedInUser; 
-    end 
+    %% Main actions and connections
+    subgraph Authentication
+        User -->|1. Google Sign-In| SignedInUser
+    end
     
-    subgraph Links 
-        SignedInUser -->|2. Create Link| LinkAdmin; 
-        LinkAdmin -->|3-4. Manage Member Tokens| MT["Member Tokens"]; 
-        LinkAdmin -->|5. Remove Members| LinkMember; 
-        MT -->|6. Join Link| LinkMember; 
-    end 
+    subgraph Links
+        SignedInUser -->|2. Create Link| LinkAdmin
+        LinkAdmin -->|3-4. Manage Member Tokens| MT["Member Tokens"]
+        LinkAdmin -->|5. Remove Members| LinkMember
+        MT -->|6. Join Link| LinkMember
+    end
     
-    subgraph Events 
-        LinkMember -->|7. Create Event| EventHost; 
-        EventHost -->|8-9. Manage Guest Tokens| GT["Guest Tokens"]; 
-        LinkMember -->|10. View Events| Events["Link Events"]; 
-    end 
+    subgraph Events
+        LinkMember -->|7. Create Event| EventHost
+        EventHost -->|8-9. Manage Guest Tokens| GT["Guest Tokens"]
+        LinkMember -->|10. View Events| Events["Link Events"]
+    end
     
-    subgraph RSVPs 
-        LinkMember -->|11. Member RSVP| RSVPs["Event RSVPs"]; 
-        GT -->|12. Guest RSVP| RSVPs; 
-        EventHost -->|13. Control RSVP Visibility| RSVPs; 
-    end 
+    subgraph RSVPs
+        LinkMember -->|11. Member RSVP| RSVPs["Event RSVPs"]
+        GT -->|12. Guest RSVP| RSVPs
+        EventHost -->|13. Control RSVP Visibility| RSVPs
+    end
     
-    %% Styling 
-    classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px; 
-    classDef links fill:#e5f9d6,stroke:#092,stroke-width:1px; 
-    classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px; 
-    classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px; 
+    %% Styling
+    classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px
+    classDef links fill:#e5f9d6,stroke:#092,stroke-width:1px
+    classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px
+    classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px
     
-    class User,SignedInUser,LinkAdmin,LinkMember,EventHost user; 
-    class MT,LinkAdmin links; 
-    class GT,Events events; 
-    class RSVPs rsvp;
+    class User,SignedInUser,LinkAdmin,LinkMember,EventHost user
+    class MT,LinkAdmin links
+    class GT,Events events
+    class RSVPs rsvp
 ```
