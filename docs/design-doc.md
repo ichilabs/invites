@@ -3,9 +3,7 @@
 > **Less Chat. More Get-Togethers.**
 >
 > Tired of **organizing group hangouts** through **endless chats** and **DMs**? Invites is a purpose-built tool for bringing people together–without the noise and confusion.
->
 > Organize in-person gatherings with friends, colleagues, teammates, classmates–any group–quickly and easily.
->
 > Plan all activities, from casual hangouts to group outings and trips, in one place.
 
 This document outlines the design and implementation plan for the Minimum Viable Product (MVP) of *Invites.cc*, a service designed to simplify the organization of group hangouts and events through an innovative conversational interface.
