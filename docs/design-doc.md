@@ -94,11 +94,11 @@ The invites.cc interface reimagines event coordination as a conversation:
 |-------------------------------------------------------|
 | Les Mythos (Badminton & Basketball)           ≡ ○ ×   |
 |-------------------------------------------------------|
-| |----------------|                                    |
-| | EVENTS         |                                    |
-| | Jul 27 - Basketball |                              |
-| | Jul 28 - Badminton  |                              |
-| |----------------|                                    |
+| |---------------------|                               |
+| | EVENTS              |                               |
+| | Jul 27 - Basketball |                               |
+| | Jul 28 - Badminton  |                               |
+| |---------------------|                               |
 |                                                       |
 | Jul: How about basketball this Thursday?       10:30am|
 |                                                       |
@@ -121,10 +121,10 @@ The invites.cc interface reimagines event coordination as a conversation:
 |                                                       |
 | [Bot] Updated events:                         10:40am |
 | "Basketball" - Jul, Pat (+1), Dad, Jat (+6)           |
-| "Badminton" on Fri, Jul 28 - Jul, Jat                |
+| "Badminton" on Fri, Jul 28 - Jul, Jat                 |
 | ◉ Show/Hide Bot                                       |
 |                                                       |
-| Message...                              📎 📅 ▶       |
+| Message...                                   ▶        |
 |-------------------------------------------------------|
 ```
 
@@ -157,239 +157,46 @@ The invites.cc interface reimagines event coordination as a conversation:
 
 ---
 
-title: 1. Google Sign-In Flow
----
-
 ```mermaid
-sequenceDiagram
-    participant User
-    participant Invites.cc
-    participant Google
+flowchart TD 
+    %% Main user states 
+    User(["User"]) --> SignedInUser(["Signed-in User"]); 
+    SignedInUser --> LinkAdmin(["Link Admin"]); 
+    SignedInUser --> LinkMember(["Link Member"]); 
+    LinkMember --> EventHost(["Event Host"]); 
     
-    User ->> Invites.cc: Initiate Sign-In
-    Invites.cc ->> Google: Redirect to Google Sign-In
-    Google ->> User: Google Authentication Page
-    User ->> Google: Provide Google Credentials
-    Google ->> Invites.cc: Return Authentication Token
-    Invites.cc ->> User: Grant Signed-In Access
-```
-
----
-
-title: 2. Link Creation Flow
----
-
-```mermaid
-sequenceDiagram
-    participant User as Signed-in User
-    participant Invites as Invites.cc
+    %% Main actions and connections 
+    subgraph Authentication 
+        User -->|1. Google Sign-In| SignedInUser; 
+    end 
     
-    User ->> Invites: Command: Create New Link
-    Invites ->> Invites: Generate Unique Link
-    Invites ->> Invites: Assign User as Link Admin
-    Invites ->> User: Provide Link and Admin Privileges
-```
-
----
-
-title: 3. Member Invitation via Tokens
----
-
-```mermaid
-sequenceDiagram
-    participant Admin as Link Admin
-    participant Invites as Invites.cc
+    subgraph Links 
+        SignedInUser -->|2. Create Link| LinkAdmin; 
+        LinkAdmin -->|3-4. Manage Member Tokens| MT["Member Tokens"]; 
+        LinkAdmin -->|5. Remove Members| LinkMember; 
+        MT -->|6. Join Link| LinkMember; 
+    end 
     
-    Admin ->> Invites: Command: Generate Invite Token
-    Invites ->> Invites: Generate Unique, Revocable Token
-    Invites ->> Admin: Provide Invitation Token
-```
-
----
-
-title: 4. Member Token Revocation
----
-
-```mermaid
-sequenceDiagram
-    participant Admin as Link Admin
-    participant Invites as Invites.cc
+    subgraph Events 
+        LinkMember -->|7. Create Event| EventHost; 
+        EventHost -->|8-9. Manage Guest Tokens| GT["Guest Tokens"]; 
+        LinkMember -->|10. View Events| Events["Link Events"]; 
+    end 
     
-    Admin ->> Invites: Command: Revoke Invite Token
-    Invites ->> Invites: Invalidate Specified Token
-    Invites ->> Admin: Confirm Token Revocation
-```
-
----
-
-title: 5. Member Removal
----
-
-```mermaid
-sequenceDiagram
-    participant Admin as Link Admin
-    participant Invites as Invites.cc
+    subgraph RSVPs 
+        LinkMember -->|11. Member RSVP| RSVPs["Event RSVPs"]; 
+        GT -->|12. Guest RSVP| RSVPs; 
+        EventHost -->|13. Control RSVP Visibility| RSVPs; 
+    end 
     
-    Admin ->> Invites: Command: Remove Link Member
-    Invites ->> Invites: Revoke Member's Access to Link
-    Invites ->> Admin: Confirm Member Removal
-```
-
----
-
-title: 6. Link Joining via Token
----
-
-```mermaid
-sequenceDiagram
-    participant User as Signed-in User
-    participant Invites as Invites.cc
+    %% Styling 
+    classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px; 
+    classDef links fill:#e5f9d6,stroke:#092,stroke-width:1px; 
+    classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px; 
+    classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px; 
     
-    User ->> Invites: Action: Use Invite Token to Join Link
-    Invites ->> Invites: Validate Token
-    Invites ->> Invites: Grant Link Membership
-    Invites ->> User: Confirm Link Membership
-```
-
----
-
-title: 7. Event Creation
----
-
-```mermaid
-sequenceDiagram
-    participant Member as Link Member
-    participant Invites as Invites.cc
-    
-    Member ->> Invites: Command: Create New Event in Link
-    Invites ->> Invites: Generate Event within Link
-    Invites ->> Invites: Assign Member as Event Host
-    Invites ->> Member: Confirm Event Creation with Host Privileges
-```
-
----
-
-title: 8. Guest Invitation via Tokens
----
-
-```mermaid
-sequenceDiagram
-    participant Host as Event Host/Link Admin
-    participant Invites as Invites.cc
-    
-    Host ->> Invites: Command: Generate Guest Invite Token for Event
-    Invites ->> Invites: Generate Unique, Revocable Guest Token
-    Invites ->> Host: Provide Guest Invitation Token
-```
-
----
-
-title: 9. Guest Token Revocation
----
-
-```mermaid
-sequenceDiagram
-    participant Host as Event Host/Link Admin
-    participant Invites as Invites.cc
-    
-    Host ->> Invites: Command: Revoke Guest Invite Token
-    Invites ->> Invites: Invalidate Specified Guest Token
-    Invites ->> Host: Confirm Guest Token Revocation
-```
-
----
-
-title: 10. List Events in a Link
----
-
-```mermaid
-sequenceDiagram
-    participant User as Anyone (with Link ID)
-    participant Invites as Invites.cc
-    
-    User ->> Invites: Action: Access Link with Link ID
-    Invites ->> Invites: Retrieve Events Associated with Link ID
-    Invites ->> User: Display List of Events
-```
-
----
-
-title: 11. Link Member RSVP
----
-
-```mermaid
-sequenceDiagram
-    participant Member as Signed-in Link Member
-    participant Invites as Invites.cc
-    
-    Member ->> Invites: Command: RSVP to Event (Status, Guest Count)
-    Invites ->> Invites: Record RSVP Status and Guest Count
-    Invites ->> Member: Confirm RSVP
-```
-
----
-
-title: 12. Guest Token Holder RSVP
----
-
-```mermaid
-sequenceDiagram
-    participant Guest as Guest (Token Holder)
-    participant Invites as Invites.cc
-    
-    Guest ->> Invites: Action: Use Guest Invite Token to RSVP
-    Invites ->> Invites: Validate Guest Token
-    Invites ->> Invites: Request Name if Not Signed-In (Optional)
-    Invites ->> Invites: Record RSVP Status, Guest Count, and Name (if Provided)
-    Invites ->> Guest: Confirm RSVP
-```
-
----
-
-title: 13. High-Level Architecture
----
-
-```mermaid
-flowchart TB
-    %% Actors
-    User((User))
-    
-    subgraph "Invites.cc MVP Architecture"
-        subgraph "Frontend Layer"
-            LLMAgent["LLM Agent<br/>(Chat Interface)"]
-        end
-        
-        subgraph "Backend Services"
-            GRPCAPI["gRPC API<br/>(Go)"]
-            DataStorage["Data Storage<br/>(KV Store)"]
-        end
-        
-        subgraph "Monitoring Infrastructure"
-            Observability["Observability<br/>(Metrics, Logs, Traces)"]
-        end
-    end
-    
-    %% Connections with descriptive labels
-    User -- "Interacts with" --> LLMAgent
-    LLMAgent -- "Sends gRPC Requests" --> GRPCAPI
-    GRPCAPI -- "Reads/Writes Data" --> DataStorage
-    
-    %% Observability connections
-    Observability -. "Collects Metrics & Logs" .-> LLMAgent
-    Observability -. "Collects Metrics & Logs" .-> GRPCAPI
-    Observability -. "Collects Metrics & Logs" .-> DataStorage
-    
-    %% Custom styling
-    classDef user fill:#d8e8f9,stroke:#333,stroke-width:1px
-    classDef frontend fill:#f9f0ff,stroke:#333,stroke-width:2px
-    classDef backend fill:#e6f3ff,stroke:#333,stroke-width:2px
-    classDef storage fill:#e6ffed,stroke:#333,stroke-width:2px
-    classDef monitoring fill:#fff8e6,stroke:#333,stroke-width:2px
-    
-    %% Apply styles
-    class User user
-    class LLMAgent frontend
-    class GRPCAPI backend
-    class DataStorage storage
-    class Observability monitoring
+    class User,SignedInUser,LinkAdmin,LinkMember,EventHost user; 
+    class MT,LinkAdmin links; 
+    class GT,Events events; 
+    class RSVPs rsvp;
 ```
