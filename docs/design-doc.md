@@ -76,8 +76,8 @@ The MVP of Invites.cc is built around four key components:
 
 - LLM Agent (Chat Interface): Natural language interface allowing users to create, update, and query events through simple conversation...
 - gRPC API Service: Backend handling all core business logic, data management, and secure communication within the system.
-- Data Store**:** Persistently stores all application data, ensuring reliability and accessibility.
-- Observability**:** Implements basic logging to provide essential insights into system behavior and aid in initial development and debugging.
+- Data Store: Persistently stores all application data, ensuring reliability and accessibility.
+- Observability: Implements basic logging to provide essential insights into system behavior and aid in initial development and debugging.
 
 ### User Experience
 
