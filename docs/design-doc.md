@@ -29,7 +29,7 @@ Although intentionally minimalist, this MVP is designed for growth, providing a 
 
 ### MVP Architecture
 
-```other
+```mermaid
 graph TB
     %% Actors
     User(("User"))
