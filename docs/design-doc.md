@@ -2,24 +2,24 @@
 
 > **Less Chat. More Get-Togethers.**
 >
-> Tired of **organizing group hangouts** through **endless chats** and **DMs**? Invites is a purpose-built tool for bringing people together–without the noise and confusion.
-> Organize in-person gatherings with friends, colleagues, teammates, classmates–any group–quickly and easily.
-> Plan all activities, from casual hangouts to group outings and trips, in one place.
+> Tired of **organizing group hangouts** through **endless chats** and **DMs**? **Invites.cc** is a **purpose-built tool for bringing people together**–without the noise and confusion.
+> Organize in-person gatherings with friends, colleagues, teammates, classmates–**any group–quickly and easily**.
+> Plan **all activities**, from casual hangouts to group outings and trips, **in one place**.
 
-This document outlines the design and implementation plan for the Minimum Viable Product (MVP) of *Invites.cc*, a service designed to simplify the organization of group hangouts and events through an innovative conversational interface.
+This document outlines the **design and implementation plan** for the Minimum Viable Product (MVP) of *Invites.cc*, a service designed to simplify the **organization of group hangouts and events** through an **innovative conversational interface**.
 
 ## Motivation
 
 Organizing and coordinating group gatherings often results in an endless cycle of frustrating chats and disjointed communication, leading to:
 
-- Fragmented Information: Event details scattered across multiple chat platforms, emails, and calendar invites.
-- Chat Overhead: Endless notification chains and side conversations that obscure critical details.
-- Decision Fatigue: No clear way to track who's attending, who isn't, and who's still deciding.
-- Context Switching: Constantly moving between communication tools and calendar applications.
+- **Fragmented Information**: Event details scattered across multiple chat platforms, emails, and calendar invites.
+- **Chat Overhead**: Endless notification chains and side conversations that obscure critical details.
+- **Decision Fatigue**: No clear way to track who's attending, who isn't, and who's still deciding.
+- **Context Switching**: Constantly moving between communication tools and calendar applications.
 
-**Invites.cc** solves these pain points by providing a focused, single “Link” per group to manage event-related discussions without the noise. Members can still communicate directly with each other in the chat, but whenever they need to create a new event, adjust existing plans, or handle RSVPs, they can call on the LLM to streamline the process.
+**Invites.cc** solves these pain points by providing a focused, **single “Link” per group to manage event-related discussions without the noise**. Members can still communicate directly with each other in the chat, but whenever they need to create a new event, adjust existing plans, or handle RSVPs, they can call on the LLM to streamline the process.
 
-The toggle for hiding or displaying the LLM’s responses ensures that automated management details don’t clutter the conversation, while still preserving full control for users who want to see or review those interactions.
+The **toggle for hiding or displaying the LLM’s responses** ensures that automated management details don’t clutter the conversation, while still preserving full control for users who want to see or review those interactions.
 
 Although intentionally minimalist, this MVP is designed for growth, providing a solid foundation for future enhancements, including more advanced search capabilities, deeper integrations (such as Google Calendar), and improved scalability.
 
@@ -74,19 +74,19 @@ graph TB
 
 The MVP of Invites.cc is built around four key components:
 
-- LLM Agent (Chat Interface): Natural language interface allowing users to create, update, and query events through simple conversation...
-- gRPC API Service: Backend handling all core business logic, data management, and secure communication within the system.
-- Data Store: Persistently stores all application data, ensuring reliability and accessibility.
-- Observability: Implements basic logging to provide essential insights into system behavior and aid in initial development and debugging.
+- **LLM Agent** (Chat Interface): Natural language interface allowing users to create, update, and query events through simple conversation...
+- **gRPC API Service**: Backend handling all core business logic, data management, and secure communication within the system.
+- **Data Store:** Persistently stores all application data, ensuring reliability and accessibility.
+- **Observability:** Implements basic logging to provide essential insights into system behavior and aid in initial development and debugging.
 
 ### User Experience
 
 The invites.cc interface reimagines event coordination as a conversation:
 
-- Each Link functions as a dedicated group chat where members discuss plans naturally.
-- The integrated LLM agent interprets conversations to create, update, and track events...
-- Users can toggle LLM visibility to either view the agent's interpreted actions or focus solely on human conversation.
-- A clean timeline view surfaces upcoming events alongside the conversation.
+- **Each Link** works as a **dedicated group chat** where members discuss plans naturally.
+- The integrated **LLM agent interprets conversations** to create, update, and track events...
+- Users can **toggle LLM visibility** to either view the agent's interpreted actions or focus solely on human conversation.
+- A **clean timeline view** surfaces upcoming events alongside the conversation.
 
 ```other
 |-------------------------------------------------------|
@@ -136,6 +136,7 @@ flowchart TD
     LinkAdmin(["Link Admin"])
     LinkMember(["Link Member"])
     EventHost(["Event Host"])
+    EventGuest(["Event Guest"])
     
     subgraph Authentication
         User -->|"**1.** Sign-In with Google"| SignedInUser
@@ -149,31 +150,39 @@ flowchart TD
         end
         
         LinkAdmin -->|"**3.** Generate/Revoke"| LinkMemberToken["Link Member Token"]
-        LinkMemberToken -->|"**4.** Share to invite new members"| User
+        LinkMemberToken -->|"**4.** Share to invite new members"| SignedInUser
     end
     
     subgraph Event
         %% Roles and creation
-        LinkAdmin -->|"**5.a** Create Event"| EventHost
-        LinkMember -->|"**5.b** Create Event"| EventHost
+        LinkAdmin -->|"**6.a** Create Event"| EventHost
+        LinkMember -->|"**6.b** Create Event"| EventHost
         
         %% Invitations
-        EventHost -->|"**5.a** Invite"| LinkAdmin
-        EventHost -->|"**5.b** Invite"| LinkMember
+        EventHost -->|"**7.a** Invite"| LinkAdmin
+        EventHost -->|"**7.b** Invite"| LinkMember
         
         %% Guest management
-        EventHost -->|"**7.** Generate/Revoke"| EventGuestToken["Event Guest Token"]
-        EventGuestToken -->|"**8.** Share to invite non-Link members"| User
-        User -->|"**9.** Join as Guest with valid Token"| Guests["Event Guests"]
+        EventHost -->|"**9.** Generate/Revoke"| EventGuestToken["Event Guest Token"]
+        EventGuestToken -->|"**10.** Share to invite non-Link members"| User
+        User -->|"**11.a** Join as Guest with valid Token and custom name"| EventGuest
+        SignedInUser -->|"**11.b** Join as Guest with valid Token"| EventGuest
+        LinkMember -->|"**8.b** RSVP"| EventRSVP
+        EventGuest -->|"**12.** RSVP"| EventRSVP
+        EventHost -->|"**13.** Manage visibility"| EventRSVP
         
         %% RSVPs
         subgraph RSVP
-            LinkAdmin -->|"**6.a** RSVP"| EventRSVP["Event RSVPs<br>Response: (going, notGoing, maybe)<br>+ Number of additional guests"]
-            LinkMember -->|"**6.b** RSVP"| EventRSVP
-            Guests -->|"**10.** RSVP"| EventRSVP
-            EventHost -->|"**11.** Manage visibility"| EventRSVP
+            LinkAdmin -->|"**8.a** RSVP"| EventRSVP["RSVP Response: (going, notGoing, maybe) + numberOfAdditionalGuests"]
         end
     end
+
+    %% Apply styles
+    class User,SignedInUser,EventHost,EventGuest user
+    class LinkAdmin,LinkMember member
+    class LinkMemberToken links
+    class EventGuestToken events
+    class EventRSVP rsvp
     
     %% Styling
     classDef user fill:#d4f1f9,stroke:#05a,stroke-width:2px,border-radius:8px
@@ -182,12 +191,6 @@ flowchart TD
     classDef events fill:#f9e4d6,stroke:#930,stroke-width:1px,border-radius:5px
     classDef rsvp fill:#f9f5d6,stroke:#963,stroke-width:1px,border-radius:5px
     
-    %% Apply styles
-    class User,SignedInUser,EventHost user
-    class LinkAdmin,LinkMember member
-    class LinkMemberToken links
-    class EventGuestToken,Guests events
-    class EventRSVP rsvp
     
     %% Improve subgraph styling
     style Authentication fill:#f0f8ff,stroke:#ccc,stroke-width:1px
