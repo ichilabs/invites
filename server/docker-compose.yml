@@ -1,47 +1,62 @@
 services:
   app:
-    container_name: golang_container
-    # TODO: Remove basic setting after test
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=db_test
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-    tty: true
     build: .
+    container_name: golang_container
+    environment:
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_HOST=${POSTGRES_HOST}
+      - DB_PORT=5432
+      - APP_ENV=${APP_ENV}
     ports:
-      - 8000:8080
+      - "9090:9090"
     restart: on-failure
-    volumes:
-      - .:/app
     depends_on:
+      postgres_invites:
+        condition: service_healthy
+    networks:
       - db
 
-  db:
-    container_name: postgres
+  postgres_invites:
+    container_name: postgres_invites
     image: postgres
     environment:
-      # TODO: Remove basic setting after test
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       PGDATA: /data/postgres
-      POSTGRES_DB: bank
     volumes:
       - db:/data/postgres
     ports:
-      - "5332:5432"
+      - "5434:5432"
     networks:
       - db
     restart: on-failure
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d postgres" ]
+      test: [ "CMD-SHELL", "pg_isready -d ${POSTGRES_DB}" ]
       interval: 30s
       timeout: 10s
       retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "9091:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - db
+    restart: on-failure
+
 networks:
   db:
     driver: bridge
 
 volumes:
   db:
+  pgadmin_data: 
