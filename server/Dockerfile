@@ -1,17 +1,21 @@
-# Start from golang base image
-FROM golang:alpine
+FROM golang:1.21-alpine
 
-RUN apk update && apk add --no-cache git && apk add --no-cach bash && apk add build-base
-
-RUN mkdir /app
 WORKDIR /app
 
-RUN go get -d -v ./...
+# Copy go mod and sum files
+COPY go.mod go.sum ./
 
-RUN go install -v ./...
+# Download all dependencies
+RUN go mod download
 
-RUN go build -o /build
+# Copy the source code
+COPY . .
 
-EXPOSE 8080
+# Build the application
+RUN go build -o main .
 
-CMD [ "/build" ]
+# Expose port 9090
+EXPOSE 9090
+
+# Command to run the executable
+CMD ["./main"]
