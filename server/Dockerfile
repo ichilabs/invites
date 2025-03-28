@@ -1,21 +1,14 @@
-FROM golang:1.21-alpine
-
+# Build stage
+FROM golang:1.21-alpine AS builder
 WORKDIR /app
-
-# Copy go mod and sum files
 COPY go.mod go.sum ./
-
-# Download all dependencies
 RUN go mod download
-
-# Copy the source code
 COPY . .
-
-# Build the application
 RUN go build -o main .
 
-# Expose port 9090
+# Run stage
+FROM alpine:3.19
+WORKDIR /app
+COPY --from=builder /app/main .
 EXPOSE 9090
-
-# Command to run the executable
 CMD ["./main"]
